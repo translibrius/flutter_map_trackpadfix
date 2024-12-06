@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:io';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
@@ -631,19 +632,20 @@ class MapInteractiveViewerState extends State<MapInteractiveViewer>
     ScaleUpdateDetails details,
     double zoomAfterPinchZoom,
   ) {
-    final oldCenterPt =
-        _camera.projectAtZoom(_camera.center, zoomAfterPinchZoom);
+    final oldCenterPt = _camera.project(_camera.center, zoomAfterPinchZoom);
     final newFocalLatLong =
         _camera.offsetToCrs(_focalStartLocal, zoomAfterPinchZoom);
-    final newFocalPt =
-        _camera.projectAtZoom(newFocalLatLong, zoomAfterPinchZoom);
-    final oldFocalPt =
-        _camera.projectAtZoom(_focalStartLatLng, zoomAfterPinchZoom);
+    final newFocalPt = _camera.project(newFocalLatLong, zoomAfterPinchZoom);
+    final oldFocalPt = _camera.project(_focalStartLatLng, zoomAfterPinchZoom);
     final zoomDifference = oldFocalPt - newFocalPt;
     final moveDifference = _rotateOffset(_focalStartLocal - _lastFocalLocal);
 
-    final newCenterPt = oldCenterPt + zoomDifference + moveDifference;
-    return _camera.unprojectAtZoom(newCenterPt, zoomAfterPinchZoom);
+    if (Platform.isWindows) {
+      return _camera.center;
+    }
+
+    final newCenterPt = oldCenterPt + zoomDifference + moveDifference.toPoint();
+    return _camera.unproject(newCenterPt, zoomAfterPinchZoom);
   }
 
   void _handleScalePinchRotate(
